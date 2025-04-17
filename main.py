@@ -70,6 +70,4 @@ if not swing_df.empty:
 else:
     st.warning("😶 No swing trade opportunities found right now. Try again later.")
 
-# Optional debug
-with st.expander("🔍 Debug: Raw CoinDCX Data"):
-    st.write(df_raw.head(5))
+
