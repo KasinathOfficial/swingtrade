@@ -6,7 +6,7 @@ st.set_page_config(page_title="Crypto Swing Trade Predictor", layout="wide")
 st.title("📈 Crypto Swing Trade Predictor")
 
 # --- Fetch Data from CoinDCX ---
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=30)
 def fetch_coindcx_data():
     url = "https://api.coindcx.com/exchange/ticker"
     response = requests.get(url)
