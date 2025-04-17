@@ -69,5 +69,6 @@ if not swing_df.empty:
     st.dataframe(swing_df, use_container_width=True)
 else:
     st.warning("😶 No swing trade opportunities found right now. Try again later.")
-
+st.markdown("---")
+st.caption("Built with ❤️ using CoinDCX data & Streamlit.")
 
