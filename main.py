@@ -4,7 +4,6 @@ import pandas as pd
 
 st.set_page_config(page_title="Crypto Swing Trade Predictor", layout="wide")
 st.title("📈 Crypto Swing Trade Predictor")
-st.markdown("Using real-time CoinDCX data to find short-term swing trades.")
 
 # --- Fetch Data from CoinDCX ---
 @st.cache_data(ttl=60)
