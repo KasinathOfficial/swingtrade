@@ -5,7 +5,7 @@ import random
 
 st.set_page_config(page_title="Crypto Swing Trade Predictor", layout="wide")
 
-st.title("🚀 Crypto Swing Trade Predictor (CoinDCX Live Data)")
+st.title("🚀 Crypto Swing Trade Predictor")
 
 # 1. Fetch data from CoinDCX
 @st.cache_data(ttl=60)
