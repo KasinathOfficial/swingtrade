@@ -19,24 +19,28 @@ def swing_trade_predictor(df):
 
     for _, row in df.iterrows():
         try:
-            base = row['market'].split('_')[0]
-            quote = row['market'].split('_')[1]
+            market = row['market']
+            base = market.split('_')[0]
+            quote = market.split('_')[1]
+
             price = float(row['last_price'])
             volume = float(row['volume'])
-            avg_volume = volume / 2  # Simulated average volume
-            change_24h = float(row.get('change_24_hour', 0))
-            change_7d = float(row.get('change_7_day', change_24h * 1.5))  # Simulated
+            avg_volume = volume / 2  # Simulated average
+            volume_ratio = volume / avg_volume
 
-            # Calculations
-            volume_ratio = volume / avg_volume if avg_volume else 1
-            is_momentum = change_24h > 2 and change_7d > 5
-            is_volume_strong = volume_ratio >= 1.5
-            is_trending = change_7d > change_24h
+            # Use available 24h change or simulate
+            change_24h = float(row.get('price_change_percent_24h', 0))
+            change_7d = change_24h * 2  # Simulate 7D momentum
 
-            # Dynamic Hold Period
-            if change_7d > 10 and volume_ratio > 3:
+            # Relaxed conditions
+            is_momentum = change_24h > 1.5 and change_7d > 3
+            is_volume_strong = volume_ratio > 1.2
+            is_trending = change_7d >= change_24h
+
+            # Dynamic hold period
+            if change_7d > 8 and volume_ratio > 2.5:
                 hold_period = "1–2 days"
-            elif change_7d > 7 and volume_ratio > 2:
+            elif change_7d > 5 and volume_ratio > 1.8:
                 hold_period = "2–4 days"
             else:
                 hold_period = "3–7 days"
@@ -52,10 +56,11 @@ def swing_trade_predictor(df):
                     "Hold Period": hold_period,
                     "Signal Strength": f"{volume_ratio:.2f}x Volume Spike"
                 })
-        except:
+        except Exception as e:
             continue
 
     return pd.DataFrame(swing_signals)
+
 
 
 # --- App Flow ---
