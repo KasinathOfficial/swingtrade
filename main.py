@@ -73,11 +73,11 @@ def analyze_market(data):
                 ai_prediction = ai_trade_prediction(win_probability, volume_type, volatility)
 
                 if win_probability > 80:
-                    trade_decision = "🔥 High Confidence Buy (Win %: {}%)".format(win_probability)
+                    trade_decision = "🔥 High Confidence Buy "
                 elif win_probability > 65:
-                    trade_decision = "✅ Strong Buy (Win %: {}%)".format(win_probability)
+                    trade_decision = "✅ Strong Buy "
                 else:
-                    trade_decision = "⚠️ Moderate Buy (Win %: {}%)".format(win_probability)
+                    trade_decision = "⚠️ Moderate Buy "
 
                 potential_explosions.append({
                     "Symbol": symbol,
@@ -89,9 +89,9 @@ def analyze_market(data):
                     "Volatility (%)": volatility,
                     "Target Price": target_price,
                     "Stop Loss Price": stop_loss_price,
-                    "Win Probability (%)": win_probability,
+                    "Win (%)": win_probability,
                     "Trade Decision": trade_decision,
-                    "AI Trade Prediction": ai_prediction
+                    "AI decision": ai_prediction
                 })
         except (ValueError, KeyError):
             continue
