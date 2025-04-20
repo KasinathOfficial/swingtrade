@@ -1,74 +1,117 @@
 import streamlit as st
-import pandas as pd
 import requests
+import pandas as pd
+import time
 import random
 
-st.set_page_config(page_title="Crypto Swing Trade Predictor", layout="wide")
+st.set_page_config(page_title="Crypto Explosion Predictor", layout="wide")
+st.title("🚀 Crypto Explosion Predictor")
 
-st.title("🚀 Crypto Swing Trade Predictor")
-
-# 1. Fetch data from CoinDCX
-@st.cache_data(ttl=60)
 def fetch_coindcx_data():
     url = "https://api.coindcx.com/exchange/ticker"
-    response = requests.get(url)
-    data = response.json()
-    return pd.DataFrame(data)
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        return [coin for coin in data if coin['market'].endswith('INR')]
+    except requests.RequestException:
+        return []
 
-# 2. Swing trade predictor logic
-def swing_trade_predictor(df):
-    swing_signals = []
+def calculate_target_price(price, change, volume):
+    fib_multiplier = 1.618
+    volatility_factor = 1 + (volume / 10000000)
+    return round(price * (1 + ((change / 100) * fib_multiplier * volatility_factor)), 2)
 
-    for _, row in df.iterrows():
+def calculate_stop_loss(price, change):
+    stop_loss_factor = 0.95 if change > 8 else 0.90
+    return round(price * stop_loss_factor, 2)
+
+def calculate_volatility(change, volume):
+    return round(abs(change) * (1 + (volume / 10000000)), 2)
+
+def calculate_win_probability(change, volume):
+    base_win_rate = 50
+    momentum_boost = min(change * 2, 20)
+    volume_boost = min((volume / 10000000) * 10, 30)
+    total_probability = base_win_rate + momentum_boost + volume_boost
+    return round(min(total_probability, 95), 2)
+
+def calculate_best_buy_price(price):
+    return round(price * 0.98, 2)
+
+def get_volume_type(change, current_volume):
+    avg_volume = current_volume * random.uniform(0.6, 0.9)
+    if current_volume > avg_volume * 1.2:
+        if change > 0:
+            return "Bullish"
+        elif change < 0:
+            return "Bearish"
+    return "Neutral"
+
+def ai_trade_prediction(win_prob, volume_type, volatility):
+    if win_prob > 70 and volume_type == "Bullish" and volatility < 25:
+        return "Yes"
+    else:
+        return "No"
+
+def analyze_market(data):
+    potential_explosions = []
+    for coin in data:
         try:
-            market = row['market']
-            base, quote = market.split('_')
-            price = float(row['last_price'])
-            volume = float(row['volume'])
+            symbol = coin['market']
+            price = float(coin['last_price'])
+            volume = float(coin['volume'])
+            change = float(coin['change_24_hour'])
 
-            # Simulate change % and volume ratio (since API doesn’t give actuals)
-            simulated_change_24h = random.uniform(1.5, 6.0)  # 1.5% to 6% up
-            simulated_change_7d = simulated_change_24h * random.uniform(1.3, 2.0)
-            avg_volume = volume / random.uniform(1.2, 2.0)
-            volume_ratio = volume / avg_volume
+            if change > 5 and volume > 500000:
+                target_price = calculate_target_price(price, change, volume)
+                stop_loss_price = calculate_stop_loss(price, change)
+                volatility = calculate_volatility(change, volume)
+                win_probability = calculate_win_probability(change, volume)
+                best_buy_price = calculate_best_buy_price(price)
+                volume_type = get_volume_type(change, volume)
+                ai_prediction = ai_trade_prediction(win_probability, volume_type, volatility)
 
-            # Predictor conditions
-            if simulated_change_24h > 1.5 and simulated_change_7d > 3 and volume_ratio > 1.2:
-                if simulated_change_7d > 8 and volume_ratio > 2.5:
-                    hold_period = "1–2 days"
-                elif simulated_change_7d > 5 and volume_ratio > 1.8:
-                    hold_period = "2–4 days"
+                if win_probability > 80:
+                    trade_decision = "🔥 High Confidence Buy (Win %: {}%)".format(win_probability)
+                elif win_probability > 65:
+                    trade_decision = "✅ Strong Buy (Win %: {}%)".format(win_probability)
                 else:
-                    hold_period = "3–7 days"
+                    trade_decision = "⚠️ Moderate Buy (Win %: {}%)".format(win_probability)
 
-                swing_signals.append({
-                    "Coin": f"{base}/{quote}",
-                    "Current Price": round(price, 4),
-                    "Best Buy Price": round(price * 0.98, 4),
-                    "Target Price": round(price * 1.08, 4),
-                    "Stop Loss": round(price * 0.96, 4),
-                    "Trend": "Uptrend",
-                    "Hold Period": hold_period,
-                    "Signal Strength": f"{volume_ratio:.2f}x Volume Spike",
+                potential_explosions.append({
+                    "Symbol": symbol,
+                    "Price": price,
+                    "Best Price to Buy": best_buy_price,
+                    "24h Change (%)": change,
+                    "Volume": volume,
+                    "Volume Type": volume_type,
+                    "Volatility (%)": volatility,
+                    "Target Price": target_price,
+                    "Stop Loss Price": stop_loss_price,
+                    "Win Probability (%)": win_probability,
+                    "Trade Decision": trade_decision,
+                    "AI Trade Prediction": ai_prediction
                 })
-
-        except Exception as e:
+        except (ValueError, KeyError):
             continue
+    return potential_explosions
 
-    return pd.DataFrame(swing_signals)
+placeholder = st.empty()
+while True:
+    data = fetch_coindcx_data()
+    if data:
+        analyzed_data = analyze_market(data)
+        if analyzed_data:
+            df = pd.DataFrame(analyzed_data)
+            with placeholder.container():
+                st.subheader("📈 Cryptos Likely to Explode Soon")
+                st.dataframe(df)
+        else:
+            with placeholder.container():
+                st.info("No potential explosive cryptos detected right now.")
+    else:
+        with placeholder.container():
+            st.error("Failed to retrieve data. Please check API access.")
 
-# 3. Run
-with st.spinner("⏳ Fetching live data..."):
-    df_raw = fetch_coindcx_data()
-    swing_df = swing_trade_predictor(df_raw)
-
-# 4. Output
-st.subheader("🎯 Swing Trade Opportunities")
-
-if not swing_df.empty:
-    st.dataframe(swing_df, use_container_width=True)
-else:
-    st.warning("😶 No swing trade opportunities found right now. Try again later.")
-st.markdown("---")
-st.caption("Built with ❤️ using CoinDCX data & Streamlit.")
-
+    time.sleep(1)
